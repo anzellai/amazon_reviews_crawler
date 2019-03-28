@@ -34,13 +34,38 @@ def get_review_page(product_id, region="uk", url=None):
     raise Exception("unprocessible page")
 
 
-def extract_review_text(soup, region="uk"):
-    """Extract review text information from BeautifulSoup instance"""
-    reviews = soup.find_all("span", {"class": "review-text-content"})
-    reviews_text = []
+def extract_review_meta(soup, region="uk"):
+    """Extract review meta information from BeautifulSoup instance"""
+    reviews = soup.find_all("div", {"class": "review"})
+    reviews_meta = []
     for review in reviews:
-        review_text = review.get_text()
-        reviews_text.append(review_text)
+        content = review.find("span", {"class": "review-text-content"})
+        review_text = content.get_text().strip()
+        review_profile, review_star, review_title = "", "", ""
+        try:
+            profile = review.find("span", {"class": "a-profile-name"})
+            review_profile = profile.get_text().strip()
+        except Exception as err:
+            logging.debug("error parsing review profile: %s", str(err))
+        try:
+            star = review.find("a", {"class": "a-link-normal"})
+            review_star = star.get_text().strip()
+        except Exception as err:
+            logging.debug("error parsing review star: %s", str(err))
+        try:
+            title = review.find("a", {"class": "review-title"})
+            review_title = title.get_text().strip()
+        except Exception as err:
+            logging.debug("error parsing review title: %s", str(err))
+        reviews_meta.append(
+            {
+                "profile": review_profile,
+                "star": review_star,
+                "title": review_title,
+                "text": review_text,
+            }
+        )
+
     link = soup.find("li", {"class": "a-last"})
     if link:
         try:
@@ -52,18 +77,18 @@ def extract_review_text(soup, region="uk"):
                 )
                 logging.debug("crawling next review page: %s", url)
                 next_review = get_review_page(None, region=region, url=url)
-                reviews_text.extend(extract_review_text(next_review, region=region))
+                reviews_meta.extend(extract_review_text(next_review, region=region))
         except Exception as err:
             logging.debug("error crawling next review page: %s", str(err))
             pass
-    return reviews_text
+    return reviews_meta
 
 
 def get_reviews_from_product_id(product_id, region="uk"):
     """Get review text from a product id"""
     try:
         soup = get_review_page(product_id, region=region)
-        return extract_review_text(soup, region=region)
+        return extract_review_meta(soup, region=region)
     except Exception as err:
         logging.debug("error crawling review page: %s", str(err))
         return []
