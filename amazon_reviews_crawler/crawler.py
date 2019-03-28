@@ -3,11 +3,11 @@
 
 
 from bs4 import BeautifulSoup
+import argparse
 import json
 import logging
 import requests
 import sys
-import argparse
 
 
 REVIEW_URL = "https://www.amazon.{region}/reviews/{product_id}"
@@ -22,7 +22,13 @@ def get_region(region="uk"):
 def get_review_page(product_id, region="uk", url=None):
     """Request the review page url and return a BeautifulSoup instance"""
     region = get_region(region)
-    r = requests.get(url or REVIEW_URL.format(region=region, product_id=product_id))
+    r = requests.get(
+        url or REVIEW_URL.format(region=region, product_id=product_id),
+        headers={
+            "Cache-Control": "no-cache",
+            "User-Agent": "Mozilla/5.0 (Windows NT 6.1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2228.0 Safari/537.36",
+        },
+    )
     if r.ok:
         return BeautifulSoup(r.content, features="lxml")
     raise Exception("unprocessible page")
