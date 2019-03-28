@@ -77,7 +77,7 @@ def extract_review_meta(soup, region="uk"):
                 )
                 logging.debug("crawling next review page: %s", url)
                 next_review = get_review_page(None, region=region, url=url)
-                reviews_meta.extend(extract_review_text(next_review, region=region))
+                reviews_meta.extend(extract_review_meta(next_review, region=region))
         except Exception as err:
             logging.debug("error crawling next review page: %s", str(err))
             pass
